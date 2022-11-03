@@ -1,3 +1,4 @@
+const discord = require("discord.js") // Not Important
 const client = new discord.Client() // Not Important
 const db = require("quick.db")
 const axios = require('axios');
@@ -178,4 +179,4 @@ if(content === "rewhitelist") {
     }
 }
 })
-client.login("DiscordBotToken")
+client.login("MTAzNzYwNTk1NjA0NzA5NzkwNw.Gg4NVs.suUE13kW-y81jECh0MZCpSM50EvP0Hv4hIFdWc")
