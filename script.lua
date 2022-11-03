@@ -1,6 +1,6 @@
 local a = _G.Key or "None";
 local b = game.Players.LocalPlayer.UserId;
-local thing = game:HttpGet("https://PROJECTNAME.herokuapp.com/checkwl?Key="..a.."&User="..b, true)
+local thing = game:HttpGet("https://x2400.herokuapp.com/checkwl?Key="..a.."&User="..b, true)
 if thing == "Not Whitelisted!" then
 game.Players.LocalPlayer:Kick("Not Whitelisted/Incorrect Key")
 return;
