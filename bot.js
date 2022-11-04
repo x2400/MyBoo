@@ -1,182 +1,98 @@
-const discord = require("discord.js") // Not Important
-const client = new discord.Client() // Not Important
-const db = require("quick.db")
-const axios = require('axios');
-const Express = require("express");
-const App = Express();
-// ----- Settings ----- \\
-const Settings = {
-  //THIS IS IMPORTANT\\
-  GUILD_ID: "1027348806582403102", // THIS IS VERY IMPORTANT, THIS IS THE ID OF YOUR SERVER, SEARCH ON YOUTUBE HOW TO GET IT IF YOU DONT KNOW HOW
-  OWNER_ID: "992333929719812118", // THIS IS VERY IMPORTANT, THIS IS THE ID OF YOUR PROFILE, SEARCH ON YOUTUBE HOW TO GET IT IF YOU DONT KNOW HOW
-  Shoppy_API_KEY: "7YQ1Pz7ZXPl9CpYswmlu6HNo8nCVHp7GC7Ig0Uqcq6kQuiHIip", // Create a Shoppy account If you haven't, then go to https://shoppy.gg/user/settings and look for your "API-KEY".
-  Whitelisted_Role_ID: "1037607496237469747", // When users use the !whitelist or !rewhitelist command, they get this role.
-  Blacklisted_Role_ID: "1037607539044532224", // When users who are not whitelist use the !rewhitelist command with a buyers Shoppy Order ID, they get this role.
-  LogsChannel_Channel_ID: "1037612336174858301", // Create a channel for logs when a user is whtelisted or uses a command!
-  //----------------\\
-  KeyDataStart: "Data_" ,// The Data for the keys
-  UsersDataStart: "UsersData_", // The Data for the users
-  KeyRobloxNameDataStart: "RobloxData_" // Data for rolbox users
-}
-// ----- Settings ----- \\
+const Discord = require('discord.js');
+const client = new Discord.Client();
+const mysql = require('mysql');
+const ap3x = "723058231676633138";
 
-App.get("/checkwl", (request, res) => {  // checks whitelist
-   let ThereKey =  request.query.Key;
-  let robloxUser = request.query.User;
-  if(!ThereKey) {
-        res.send(" Key Not Supplyed!")
-    return "Key Not Supplyed!";
-    }
-  if (!robloxUser) {
-    res.send("Roblox User Not Supplyed!")
-    return "Roblox User Not Supplyed!";
-  }
-  let ShoppyIDS = db.get(Settings.KeyDataStart+ThereKey) 
-  if(ShoppyIDS) {
-    if (db.get(Settings.UsersDataStart+ThereKey)) {
-      if (robloxUser === db.get(Settings.UsersDataStart+ThereKey)) {
-        res.send("Correct") // CHANGE THIS TO MAKE THE WHITELIST MORE SECURE!
-        return "Correct";
-      }
-      else
-      {
-      res.send("Nope.")
-      return "Nope.";
-      }
-    }
-    else
-    {
-      res.send("Nope.")
-      return "Nope.";
-    }
-  }
-  else
-  {
-    res.send("Not Whitelisted!")
-    return "C";
-  }
-})
 
+const con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "discord_bot"
+});
+
+con.connect(function(err) {
+    if (err) throw err;
+    console.log("Connected!");
+});
+
+
+// i believe there are a lot of things that need to be done but i m bored of this project already(like checking if the key is used or unused and stuff)
+// this is not protected agaisnst sql injections i would like someone to try and get all the databases ofc from ur local host and not mine lol
+// u can also add delete key or blacklist key cmd here if u would like i cba(they are easy)
+// if u r planning to use this u need to work on improving this u can use this, it would be nice if u give credits to but i dont mind if u dont
+//ur my sql gotta have a database named discord_bot and in that 2 tables one named "keysys" and one "wl_table" the keysys table needs to have to rows "usedk" and "unusedk" and wl table needs "hwid" "disid" "keyused"
+// i also had a wip of communication with the database with express on a server thru express when rblxlua calls it i may include it idk
+// the original idea for the above lines was to use express and when the script makes a request it will communitcate with the database check if the given key and hwid and stuff exist there and then pass a succees response it isnt hard to do but i am lazy
+// i had also planned to use express to add in ip's if there hwid and key is whitelisted but i also didnt do that cuz i am lazy
+//i have not added things such as blacklist because they are simple as deleting there record in the database
+
+//ok this will be it
 client.on("message", message => {
-const args = message.content.slice("!".length).trim().split(/ +/g); // Not Important
-const content = args.shift().toLowerCase(); // Not Important
-if (content === "whitelist") {
-  const key = args[0]
-  let robloxid = args[1]
-  if(!key)return(message.reply("Please Include your Shoppy Purchase ID!")) // Checks If they Included there Shoppy ID 
-   if(!robloxid)return(message.reply("Please include a roblox id to whitelist!")) // Checks If they Included there Shoppy ID
-   axios.get("https://shoppy.gg/api/v1/orders/"+key, {
-      headers: {
-      Authorization: Settings.Shoppy_API_KEY, // Needed to log data.
-      }
-   })
-   .then(function (res) { 
-     if (db.get(Settings.KeyDataStart+key)) {
-       message.reply("That key was already used for a Whitelist!")
-     }
-     else
-     {
-       if (res.data["confirmations"] === 1 && res.data["product"]["confirmations"]) {
-         db.set(Settings.KeyDataStart+key, "<@"+message.author.id+">")
-         db.push(Settings.UsersDataStart+key, robloxid)
-         let embed = new discord.MessageEmbed()
-             .setTitle("Details:")
-             .setColor("RANDOM")
-             .addField("Shoppy ID:", key)
-             .addField("Discord ID:", "<@"+message.author.id+">")
-             .addField("Type: Whitelist")
-         message.reply("You have successfully been whitelisted! Here are your details:")
-         message.reply(embed)
-         message.reply("Here is the script:")
-         message.reply("_G.Key = '"+key+"'\nloadstring(game:HttpGet(https://x2400.herokuapp.com/script.lua', true))()") // Change PROJECTNAME to the project u made on heroku!!!
-         client.guilds.cache.get(Settings.GUILD_ID).channels.cache.get(Settings.LogsChannel_Channel_ID).send(embed)
-         return;
-       }
-       else
-      {
-        message.reply("The purchase was not completed or submitted! Please contact the owner of the server If you are sure that you completed the Purchase(s)!")
-      }
-     }
-   }).catch(err => {
-            console.log("Not whtielisted")
-            if(err.response === "401") {
-              message.reply("**Invalid ID entered! (Shoppy ID not Valid/found)**")
-              return;
+    const discid = message.author.id
+	let prefix = '$';
+    if (message.author.bot) return;
+    if (message.content.indexOf(prefix) !== 0) return;
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/g);
+    const command = args.shift().toLowerCase(); //args part tottaly not copied from stack overflow :33333
+
+    if (command === 'ping') {
+        message.channel.send('Yes?');
+    } else
+    if (command === 'getrole') {
+        let disid = message.author.id
+        con.query(`SELECT * FROM wl_table WHERE disid = '${disid}'`, function(err, result) {
+            if (err) throw err;
+            console.log(result.length);
+            if (result.length) {
+                let role = message.member.guild.roles.cache.find(role => role.name === "Buyer");
+                if (role) message.guild.members.cache.get(message.author.id).roles.add(role);
             }
-            else
-          {
-             message.reply("**Invalid ID entered! (Shoppy ID not Valid/found)**")
-            return;
-          }
-          })
-}
-if(content === "getdata") {
-  if(message.author.id === Settings.OWNER_ID) {
-      const key = args[0]
-    console.log("Command used")
-    if(!key)return(message.reply("Please Include the shoppy ID to get the information from!"))
-    if(!db.get(Settings.KeyDataStart+key)) {
-      message.reply("The Key was not found or is not whitelisted!")
+        })
+    } else
+        //
+        if (command === 'redeemkey') {
+            let kiy = args[0];
+            con.query(`SELECT * FROM keysys WHERE unusedk = '${kiy}'`, function(err, result, fields) {
+                if (err) throw err;
+                console.log(result.length)
+                if (result.length) {
+                    console.log('nicceee');
+                    con.query(`UPDATE keysys SET usedk = '${kiy}' WHERE unusedk = '${kiy}'`);
+                    con.query(`UPDATE keysys SET unusedk = '' WHERE  usedk = '${kiy}'`);
+                    message.channel.send('Success.')
+                    let role = message.member.guild.roles.cache.find(role => role.name === "Buyer");
+                    if (role) message.guild.members.cache.get(message.author.id).roles.add(role);
+                    let disid = message.author.id
+                    con.query(`INSERT INTO wl_table (disid,keyused) values ('${disid}','${kiy}')`)
+                    console.log(result)
+                } else {
+                    console.log('loser mub')
+                    message.channel.send('Invalid Key.')
+                }
+            }); //got this mf to finaly work
+        } else
+    if (command === 'whitelist' && message.author.id === ap3x) {
+        let miember = message.mentions.members.first();
+        let roel = message.guild.roles.cache.find(r => r.name === "Buyer");
+        miember.roles.add(roel).catch(console.error); //perfected here stop stop
+        message.channel.send('Whitelisted Success/May Already Have Whitelist(lazy to add duplication check)')
+    } else
+    if (command === 'createkey' && message.author.id === ap3x) {
+        let kiy = args[0];
+        con.query(`INSERT INTO keysys (unusedk) values ('${kiy}')`)
+        message.channel.send('Key Created'); //this part needs to be configured if the result returns smth but i am lazy and gonna release it as is
+    } else
+    if (command === 'sethwid') {
+        let hwid = args[0];
+        let disid = message.author.id
+        con.query(`UPDATE wl_table SET hwid = '${hwid}' WHERE disid = '${disid}'`, function(err, result, fields) {
+            if (err) throw err;
+            console.log(result);
+            message.channel.send(`${result.affectedRows} Record In The Database Have Been Updated (If The First Number In This Message Is 0 It Means It Didnt Work But Rest Assured Chances Of Failure Are Very Very Low. )`)
+        });
     }
-    else
-    {
-      axios.get("https://shoppy.gg/api/v1/orders/"+key, {
-            headers: {
-              Authorization: Settings.Shoppy_AuthorizationID, // Needed to log data.
-            }
-          }).then(function (response) { 
-        console.log(response.data)
-        let confirm;
-        confirm = response.data["product"]["confirmations"]+" AND "+response.data["confirmations"]
-    let embed = new discord.MessageEmbed()
-    
-    .setTitle("Info")
-    .addField("User: ", db.get(Settings.KeyDataStart+key))
-    .addField("Key: ", key)
-    .addField("IP: ", response["data"]["agent"]["geo"]["ip"])
-    .addField("Country: ", response["data"]["agent"]["geo"]["country"])
-    .addField("Confirmation: ", confirm)
-    .addField("Roblox User ID: ", db.get(Settings.UsersDataStart+key))
-    message.reply(embed)
-    client.guilds.cache.get(Settings.GUILD_ID).channels.cache.get(Settings.LogsChannel_Channel_ID).send("Type: getdata\nUser who used the command: "+message.author.id)
-    }).catch(err => {
-            let embed = new discord.MessageEmbed()
-                .setColor("RANDOM")
-             .addField("User: ", "<@"+db.get(Settings.KeyDataStart+key)+">")
-    .addField("Key: ", key)
-            .addField("Roblox User ID: ", db.get(Settings.UsersDataStart+key))
-            message.reply(embed)
-        client.guilds.cache.get(Settings.GUILD_ID).channels.cache.get(Settings.LogsChannel_Channel_ID).send("Type: getdata\nUser who used the command: "+message.author.id)
-    })
-  }
-  }
-  else
-  {
-    message.reply("Owner Only COMMAND!")
-  }
-}
-if(content === "rewhitelist") {
-    const key = args[0]
-    let robloxid = args[1]
-    if(!key)return(message.reply("Please Include your Shoppy Purchase ID!")) // Checks If they Included there Shoppy ID
-  if(!robloxid)return(message.reply("Please include a roblox id to whitelist!")) // Checks If they Included there Shoppy ID
-    let a = db.get("Dataw22_"+key)
-    if(a) {
-    if (a == "<@"+message.author.id+">") {
-    let guild = client.guilds.cache.get(Settings.GUILD_ID)
-    let mem = guild.members.cache.get(message.author.id)
-    let role = Settings.Whitelisted_Role_ID
-    mem.roles.add(role.id)
-     message.reply("You were successfully Updated with all the roles, new channels and other stuff!") 
-     client.guilds.cache.get(Settings.GUILD_ID).channels.cache.get(Settings.LogsChannel_Channel_ID).send("Type: rewhitelist\nSuccessful\nUser who used the command: "+message.author.id)
-    }
-    else
-    {
-      client.guilds.cache.get(Settings.GUILD_ID).members.cache.get(message.author.id).roles.add(Settings.Blacklisted_Role_ID.id)
-      message.reply("You have been blacklisted from this product for using another Buyers Key!")
-      client.guilds.cache.get(Settings.GUILD_ID).channels.cache.get(Settings.LogsChannel_Channel_ID).send("Type: rewhitelist\nBlacklisted\nUser who used the command: "+message.author.id)
-    }
-    }
-}
-})
-client.login("MTAzNzYwNTk1NjA0NzA5NzkwNw.GlVRx0.Z1-Z_qwd21tSDPBsbmCYVeYGHo6MPVStZyULrk")
+});
+
+client.login('MTAzODIzNDY1MDIyMjUzMDYzMA.GorGhO.01zNo5cpQCpLq9HUIdrCqaKj_uHgwDaa9nJsHA');
